@@ -2,13 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy workspace manifests + lockfile
-COPY package.json package-lock.json ./
+# Copy workspace manifests
+COPY package.json ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/agent/package.json packages/agent/package.json
 
 # Install dependencies
-RUN npm ci --workspace=packages/shared --workspace=packages/agent
+RUN npm install --workspace=packages/shared --workspace=packages/agent --ignore-scripts
 
 # Copy source
 COPY packages/shared packages/shared
