@@ -14,7 +14,10 @@ export const config = {
     env: (process.env.XMTP_ENV || 'production') as 'production' | 'dev',
   },
   rpc: {
-    url: process.env.RPC_URL || 'https://mainnet-preconf.base.org',
+    url: process.env.RPC_URL || 'https://mainnet.base.org',
+    // ERC-8004 IdentityRegistry deploy block on Base mainnet (~block 41.65M)
+    erc8004StartBlock: parseInt(process.env.ERC8004_START_BLOCK || '41650000'),
+    chunkSize: parseInt(process.env.RPC_CHUNK_SIZE || '2000'),
   },
   contracts: {
     agentboard: process.env.CONTRACT_ADDRESS || '',

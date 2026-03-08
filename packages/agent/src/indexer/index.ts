@@ -101,19 +101,30 @@ export class Indexer {
 
   private async syncAgents() {
     try {
-      // Query past Registered events from block 0 to now
+      const latestBlock = await this.provider.getBlockNumber()
+      const fromBlock = config.rpc.erc8004StartBlock
+      const chunkSize = config.rpc.chunkSize
       const filter = this.registry.filters.Registered()
-      const events = await this.registry.queryFilter(filter, 0, 'latest')
-      console.log(`[Indexer] Found ${events.length} agents in ERC-8004 registry`)
 
-      for (const ev of events) {
-        const args = (ev as any).args
-        if (!args) continue
-        const agentId: bigint = args.agentId
-        const owner: string = args.owner
-        const agentURI: string = args.agentURI
-        await this.indexAgentFromURI(agentId, owner, agentURI)
+      console.log(`[Indexer] Syncing agents from block ${fromBlock} to ${latestBlock} (chunk=${chunkSize})`)
+
+      let totalFound = 0
+      for (let start = fromBlock; start <= latestBlock; start += chunkSize) {
+        const end = Math.min(start + chunkSize - 1, latestBlock)
+        try {
+          const events = await this.registry.queryFilter(filter, start, end)
+          totalFound += events.length
+          for (const ev of events) {
+            const args = (ev as any).args
+            if (!args) continue
+            await this.indexAgentFromURI(args.agentId, args.owner, args.agentURI)
+          }
+        } catch (chunkErr: any) {
+          console.warn(`[Indexer] Chunk ${start}-${end} failed: ${chunkErr.message}`)
+        }
       }
+
+      console.log(`[Indexer] Sync complete — ${totalFound} agents found`)
     } catch (e) {
       console.error('[Indexer] Error syncing agents:', e)
     }
