@@ -5,12 +5,13 @@ import { store } from './store'
 import { calculateTrustScore, getComponentArray } from './trust'
 import { fetchAgentSkill, hashSkillContent } from '../skill/fetcher'
 
+// ERC-8004 IdentityRegistry is ERC-721 based
+// Base mainnet: 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
 const ERC8004_ABI = [
-  'event AgentRegistered(address indexed agent, string name, string endpoint)',
-  'function isRegistered(address agent) view returns (bool)',
-  'function getAgent(address agent) view returns (string name, string endpoint, bytes publicKey, uint256 registeredAt)',
-  'function getAgentCount() view returns (uint256)',
-  'function getAgentByIndex(uint256 index) view returns (address)',
+  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
+  'function tokenURI(uint256 tokenId) view returns (string)',
+  'function ownerOf(uint256 tokenId) view returns (address)',
+  'function totalSupply() view returns (uint256)',
 ]
 
 const AGENTBOARD_ABI = [
@@ -86,10 +87,12 @@ export class Indexer {
     // Initial sync
     await this.syncAgents()
 
-    // Watch for new agent registrations
-    this.registry.on('AgentRegistered', async (address: string, name: string, endpoint: string) => {
-      console.log(`[Indexer] New agent registered: ${name} (${address})`)
-      await this.indexAgent(address, name, endpoint)
+    // Watch for new agent mints (Transfer from zero address = new registration)
+    this.registry.on('Transfer', async (from: string, to: string, tokenId: bigint) => {
+      if (from === ethers.ZeroAddress) {
+        console.log(`[Indexer] New ERC-8004 agent minted: token #${tokenId} → ${to}`)
+        await this.indexAgentByTokenId(tokenId, to)
+      }
     })
 
     // Periodic loops
@@ -99,35 +102,59 @@ export class Indexer {
 
   private async syncAgents() {
     try {
-      const count = await this.registry.getAgentCount().catch(() => 0n)
-      console.log(`[Indexer] Found ${count} agents in ERC-8004 registry`)
+      const total = await this.registry.totalSupply().catch(() => 0n)
+      console.log(`[Indexer] Found ${total} agents in ERC-8004 registry`)
 
-      for (let i = 0; i < Number(count); i++) {
-        const addr = await this.registry.getAgentByIndex(i).catch(() => null)
-        if (!addr) continue
-        const [name, endpoint, , registeredAt] = await this.registry.getAgent(addr).catch(() => ['', '', '', 0n])
-        if (name) await this.indexAgent(addr, name, endpoint, Number(registeredAt))
+      for (let i = 1n; i <= total; i++) {
+        const owner = await this.registry.ownerOf(i).catch(() => null)
+        if (!owner) continue
+        await this.indexAgentByTokenId(i, owner)
       }
     } catch (e) {
       console.error('[Indexer] Error syncing agents:', e)
     }
   }
 
-  private async indexAgent(address: string, name: string, endpoint: string, registeredAt?: number) {
+  private async indexAgentByTokenId(tokenId: bigint, owner: string) {
+    const key = `token:${tokenId}`
+    if (this.knownAgents.has(key)) return
+    this.knownAgents.add(key)
+
+    try {
+      const uri = await this.registry.tokenURI(tokenId)
+      await this.indexAgentFromURI(tokenId, owner, uri)
+    } catch (e) {
+      console.warn(`[Indexer] Failed to fetch tokenURI for #${tokenId}:`, e)
+    }
+  }
+
+  private async indexAgentFromURI(tokenId: bigint, owner: string, uri: string) {
+    // Resolve IPFS → HTTPS gateway
+    const httpUri = uri.startsWith('ipfs://')
+      ? `https://ipfs.io/ipfs/${uri.slice(7)}`
+      : uri
+
+    let card: any = {}
+    try {
+      const res = await fetch(httpUri, { signal: AbortSignal.timeout(5000) })
+      card = await res.json()
+    } catch {
+      console.warn(`[Indexer] Could not fetch agent-registration.json from ${httpUri}`)
+    }
+
+    const name = card.name || `Agent #${tokenId}`
+    const description = card.description || `ERC-8004 agent on Base`
+    const endpoint = card.services?.[0]?.url || ''
+    const address = owner
+
     if (this.knownAgents.has(address.toLowerCase())) return
     this.knownAgents.add(address.toLowerCase())
 
     const isPremium = await this.checkPremium(address)
-
     const rep = defaultReputation()
-    const ageDays = registeredAt
-      ? (Date.now() / 1000 - registeredAt) / 86400
-      : 0
-
-    const breakdown = calculateTrustScore(rep, ageDays)
+    const breakdown = calculateTrustScore(rep, 0)
     rep.trustScore = breakdown.total
 
-    // Synthesize a basename from name (lowercase, no spaces)
     const basename = name.toLowerCase().replace(/\s+/g, '') + '.base.eth'
 
     const entry: AgentEntry = {
@@ -136,21 +163,19 @@ export class Indexer {
       basename,
       endpoint,
       publicKey: '',
-      registeredAt: registeredAt || Math.floor(Date.now() / 1000),
+      registeredAt: Math.floor(Date.now() / 1000),
       erc8004Verified: true,
       erc8128Active: false,
       siwaEnabled: false,
       x402Active: false,
       category: inferCategory(name),
-      description: `${name} — an autonomous agent on Base`,
+      description,
       skill: null,
       reputation: rep,
       tier: isPremium ? 'premium' : 'basic',
     }
 
     store.upsertAgent(entry)
-
-    // Fetch skill file in background
     this.refreshSkill(entry).catch(console.error)
   }
 
