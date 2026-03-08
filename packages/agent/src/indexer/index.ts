@@ -51,7 +51,8 @@ function defaultReputation(): ReputationData {
 export class Indexer {
   private provider: ethers.WebSocketProvider | ethers.JsonRpcProvider
   private registry: ethers.Contract
-  private agentboard: ethers.Contract | null = null
+  private agentboard: ethers.Contract | null = null      // read-only (for isPremium)
+  private agentboardWriter: ethers.Contract | null = null // signed (for txs)
   private operatorWallet: ethers.Wallet | null = null
   private knownAgents = new Set<string>()
   private running = false
@@ -71,9 +72,19 @@ export class Indexer {
       this.provider
     )
 
+    // Read-only instance — only needs CONTRACT_ADDRESS
+    if (config.contracts.agentboard) {
+      this.agentboard = new ethers.Contract(
+        config.contracts.agentboard,
+        AGENTBOARD_ABI,
+        this.provider
+      )
+    }
+
+    // Signed instance — needs OPERATOR_PRIVATE_KEY for write txs
     if (config.contracts.agentboard && config.operator.privateKey) {
       this.operatorWallet = new ethers.Wallet(config.operator.privateKey, this.provider)
-      this.agentboard = new ethers.Contract(
+      this.agentboardWriter = new ethers.Contract(
         config.contracts.agentboard,
         AGENTBOARD_ABI,
         this.operatorWallet
@@ -209,9 +220,9 @@ export class Indexer {
       store.upsertAgent(agent)
 
       // Record verification onchain if skill found
-      if (skill.fetchStatus === 'ok' && this.agentboard && this.operatorWallet) {
+      if (skill.fetchStatus === 'ok' && this.agentboardWriter) {
         const hash = hashSkillContent(skill.raw)
-        await this.agentboard.recordSkillVerification(
+        await this.agentboardWriter.recordSkillVerification(
           agent.address,
           hash,
           skill.endpoints.length
@@ -237,9 +248,9 @@ export class Indexer {
     store.upsertAgent(agent)
 
     // Record snapshot onchain for top agents hourly
-    if (this.agentboard && Math.abs(breakdown.total - prev) > 2) {
+    if (this.agentboardWriter && Math.abs(breakdown.total - prev) > 2) {
       const components = getComponentArray(breakdown).map(BigInt) as [bigint, bigint, bigint, bigint, bigint]
-      await this.agentboard.recordTrustSnapshot(
+      await this.agentboardWriter.recordTrustSnapshot(
         agent.address,
         breakdown.total,
         components
