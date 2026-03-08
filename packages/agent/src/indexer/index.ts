@@ -5,13 +5,14 @@ import { store } from './store'
 import { calculateTrustScore, getComponentArray } from './trust'
 import { fetchAgentSkill, hashSkillContent } from '../skill/fetcher'
 
-// ERC-8004 IdentityRegistry is ERC-721 based
-// Base mainnet: 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
+// ERC-8004 IdentityRegistry — Base mainnet: 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
+// register() mints an NFT with agentURI pointing to agent-registration.json
 const ERC8004_ABI = [
+  'event Registered(uint256 indexed agentId, string agentURI, address indexed owner)',
   'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
   'function tokenURI(uint256 tokenId) view returns (string)',
   'function ownerOf(uint256 tokenId) view returns (address)',
-  'function totalSupply() view returns (uint256)',
+  'function register(string agentURI) returns (uint256)',
 ]
 
 const AGENTBOARD_ABI = [
@@ -87,12 +88,10 @@ export class Indexer {
     // Initial sync
     await this.syncAgents()
 
-    // Watch for new agent mints (Transfer from zero address = new registration)
-    this.registry.on('Transfer', async (from: string, to: string, tokenId: bigint) => {
-      if (from === ethers.ZeroAddress) {
-        console.log(`[Indexer] New ERC-8004 agent minted: token #${tokenId} → ${to}`)
-        await this.indexAgentByTokenId(tokenId, to)
-      }
+    // Watch for new agent registrations
+    this.registry.on('Registered', async (agentId: bigint, agentURI: string, owner: string) => {
+      console.log(`[Indexer] New ERC-8004 agent #${agentId}: ${agentURI}`)
+      await this.indexAgentFromURI(agentId, owner, agentURI)
     })
 
     // Periodic loops
@@ -102,13 +101,18 @@ export class Indexer {
 
   private async syncAgents() {
     try {
-      const total = await this.registry.totalSupply().catch(() => 0n)
-      console.log(`[Indexer] Found ${total} agents in ERC-8004 registry`)
+      // Query past Registered events from block 0 to now
+      const filter = this.registry.filters.Registered()
+      const events = await this.registry.queryFilter(filter, 0, 'latest')
+      console.log(`[Indexer] Found ${events.length} agents in ERC-8004 registry`)
 
-      for (let i = 1n; i <= total; i++) {
-        const owner = await this.registry.ownerOf(i).catch(() => null)
-        if (!owner) continue
-        await this.indexAgentByTokenId(i, owner)
+      for (const ev of events) {
+        const args = (ev as any).args
+        if (!args) continue
+        const agentId: bigint = args.agentId
+        const owner: string = args.owner
+        const agentURI: string = args.agentURI
+        await this.indexAgentFromURI(agentId, owner, agentURI)
       }
     } catch (e) {
       console.error('[Indexer] Error syncing agents:', e)
