@@ -2,8 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy workspace manifests
-COPY package.json package.json
+# Copy workspace manifests + lockfile
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/agent/package.json packages/agent/package.json
 
