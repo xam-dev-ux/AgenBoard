@@ -12,9 +12,9 @@ import { SkillViewer } from '../components/SkillViewer'
 const BASESCAN_URL = import.meta.env.VITE_BASESCAN_URL || 'https://basescan.org'
 
 export function AgentPage() {
-  const { basename } = useParams<{ basename: string }>()
-  const { data: agent, isLoading, error } = useAgent(basename)
-  const { data: historyData } = useTrustHistory(basename)
+  const { address } = useParams<{ address: string }>()
+  const { data: agent, isLoading, error } = useAgent(address)
+  const { data: historyData } = useTrustHistory(address)
 
   if (isLoading) {
     return (

@@ -105,7 +105,7 @@ export function HomePage() {
                 <div className="mt-4 flex gap-2">
                   <ContactButton agentAddress={agent.address} agentName={agent.name} className="flex-1 justify-center text-xs py-1.5 px-3" />
                   <Link
-                    to={`/agent/${agent.basename}`}
+                    to={`/agent/${agent.address}`}
                     className="font-mono text-xs border border-ink px-3 py-1.5 hover:bg-ink hover:text-paper transition-colors"
                   >
                     Profile

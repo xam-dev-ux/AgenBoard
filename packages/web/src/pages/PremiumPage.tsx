@@ -18,7 +18,7 @@ export function PremiumPage() {
 
   useEffect(() => {
     if (status === 'success' && agent) {
-      setTimeout(() => navigate(`/agent/${agent.basename}`), 2000)
+      setTimeout(() => navigate(`/agent/${agent.address}`), 2000)
     }
   }, [status, agent, navigate])
 

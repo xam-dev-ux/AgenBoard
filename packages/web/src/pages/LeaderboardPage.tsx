@@ -69,7 +69,7 @@ export function LeaderboardPage() {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-start gap-3 mb-2">
-                  <Link to={`/agent/${agent.basename}`} className="hover:text-accent2">
+                  <Link to={`/agent/${agent.address}`} className="hover:text-accent2">
                     <h3 className="font-display text-2xl font-bold italic">{agent.name}</h3>
                   </Link>
                   <TierBadge tier={agent.tier} />

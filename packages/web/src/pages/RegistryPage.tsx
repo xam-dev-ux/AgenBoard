@@ -118,7 +118,7 @@ export function RegistryPage() {
               <tr key={agent.address} className="border-b border-paper2 hover:bg-paper2/50 transition-colors">
                 <td className="px-4 py-3 font-mono text-xs text-muted w-10">{page * PAGE_SIZE + i + 1}</td>
                 <td className="px-4 py-3 w-40 max-w-[180px]">
-                  <Link to={`/agent/${agent.basename}`} className="hover:text-accent2">
+                  <Link to={`/agent/${agent.address}`} className="hover:text-accent2">
                     <div className="font-medium truncate">{agent.name}</div>
                     <div className="font-mono text-xs text-muted truncate">{agent.basename}</div>
                   </Link>
