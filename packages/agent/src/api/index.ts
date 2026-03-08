@@ -33,17 +33,20 @@ export function createApiServer() {
     withCache(res).json(store.getStats())
   })
 
-  // List agents with optional filters
+  // List agents with optional filters + pagination
   app.get('/api/agents', (req, res) => {
-    const { category, minTrust, erc8128, tier, hasSkill } = req.query
-    const agents = store.getFilteredAgents({
+    const { category, minTrust, erc8128, tier, hasSkill, limit, offset } = req.query
+    const all = store.getFilteredAgents({
       category: category as AgentCategory | undefined,
       minTrust: minTrust ? parseFloat(minTrust as string) : undefined,
       erc8128: erc8128 !== undefined ? erc8128 === 'true' : undefined,
       tier: tier as 'basic' | 'premium' | undefined,
       hasSkill: hasSkill !== undefined ? hasSkill === 'true' : undefined,
     })
-    withCache(res).json(agents)
+    all.sort((a, b) => b.reputation.trustScore - a.reputation.trustScore)
+    const lim = Math.min(parseInt((limit as string) || '50'), 100)
+    const off = parseInt((offset as string) || '0')
+    withCache(res).json({ agents: all.slice(off, off + lim), total: all.length, limit: lim, offset: off })
   })
 
   // Get single agent

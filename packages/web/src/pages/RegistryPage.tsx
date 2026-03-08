@@ -12,19 +12,31 @@ import { AgentCategory } from '@agentboard/shared'
 
 const CATEGORIES: AgentCategory[] = ['trading', 'payment', 'social', 'oracle', 'escrow', 'analytics']
 
+const PAGE_SIZE = 50
+
 export function RegistryPage() {
-  useAgents() // triggers sync to store
+  useAgents()
 
   const {
+    agents, total, page, setPage,
     searchQuery, setSearchQuery,
     selectedCategory, setSelectedCategory,
     sortBy, setSortBy,
     filterPremium, setFilterPremium,
     filterHasSkill, setFilterHasSkill,
-    filteredAgents,
   } = useRegistryStore()
 
-  const agents = filteredAgents()
+  const totalPages = Math.ceil(total / PAGE_SIZE)
+
+  // Client-side search within current page
+  const displayAgents = searchQuery
+    ? agents.filter(a => {
+        const q = searchQuery.toLowerCase()
+        return a.name.toLowerCase().includes(q) ||
+          a.basename.toLowerCase().includes(q) ||
+          a.description.toLowerCase().includes(q)
+      })
+    : agents
 
   return (
     <div>
@@ -58,7 +70,7 @@ export function RegistryPage() {
       {/* Category tabs */}
       <div className="flex flex-wrap gap-1 mb-4">
         <button
-          onClick={() => setSelectedCategory(null)}
+          onClick={() => { setSelectedCategory(null); setPage(0) }}
           className={`badge ${!selectedCategory ? 'bg-ink text-paper border-ink' : 'border-ink text-muted'}`}
         >
           All
@@ -66,7 +78,7 @@ export function RegistryPage() {
         {CATEGORIES.map(cat => (
           <button
             key={cat}
-            onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
+            onClick={() => { setSelectedCategory(selectedCategory === cat ? null : cat); setPage(0) }}
             className={`badge capitalize ${selectedCategory === cat ? 'bg-ink text-paper border-ink' : 'border-ink text-muted hover:border-accent2'}`}
           >
             {cat}
@@ -77,22 +89,22 @@ export function RegistryPage() {
       {/* Toggle filters */}
       <div className="flex gap-4 mb-6 font-mono text-xs">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={filterPremium} onChange={e => setFilterPremium(e.target.checked)} className="accent-ink" />
+          <input type="checkbox" checked={filterPremium} onChange={e => { setFilterPremium(e.target.checked); setPage(0) }} className="accent-ink" />
           Premium only
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={filterHasSkill} onChange={e => setFilterHasSkill(e.target.checked)} className="accent-ink" />
+          <input type="checkbox" checked={filterHasSkill} onChange={e => { setFilterHasSkill(e.target.checked); setPage(0) }} className="accent-ink" />
           Has SKILL.md
         </label>
       </div>
 
       {/* Table */}
-      <div className="border border-ink">
-        <table className="w-full">
+      <div className="border border-ink overflow-x-auto">
+        <table className="w-full table-fixed">
           <thead>
             <tr className="border-b border-ink bg-ink text-paper">
-              <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2">#</th>
-              <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2">Agent</th>
+              <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2 w-10">#</th>
+              <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2 w-40 max-w-[180px]">Agent</th>
               <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2 hidden md:table-cell">Category</th>
               <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2 hidden lg:table-cell">Standards</th>
               <th className="text-left font-mono text-xs uppercase tracking-widest px-4 py-2">SKILL.md</th>
@@ -102,13 +114,13 @@ export function RegistryPage() {
             </tr>
           </thead>
           <tbody>
-            {agents.map((agent, i) => (
+            {displayAgents.map((agent, i) => (
               <tr key={agent.address} className="border-b border-paper2 hover:bg-paper2/50 transition-colors">
-                <td className="px-4 py-3 font-mono text-xs text-muted">{i + 1}</td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 font-mono text-xs text-muted w-10">{page * PAGE_SIZE + i + 1}</td>
+                <td className="px-4 py-3 w-40 max-w-[180px]">
                   <Link to={`/agent/${agent.basename}`} className="hover:text-accent2">
-                    <div className="font-medium">{agent.name}</div>
-                    <div className="font-mono text-xs text-muted">{agent.basename}</div>
+                    <div className="font-medium truncate">{agent.name}</div>
+                    <div className="font-mono text-xs text-muted truncate">{agent.basename}</div>
                   </Link>
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell">
@@ -143,7 +155,7 @@ export function RegistryPage() {
                 </td>
               </tr>
             ))}
-            {agents.length === 0 && (
+            {displayAgents.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center font-mono text-sm text-muted">
                   No agents found
@@ -153,6 +165,34 @@ export function RegistryPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 font-mono text-xs">
+          <span className="text-muted">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total} agents
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+              className="border border-ink px-3 py-1 disabled:opacity-30 hover:bg-ink hover:text-paper transition-colors"
+            >
+              ← Prev
+            </button>
+            <span className="px-3 py-1 border border-ink bg-ink text-paper">
+              {page + 1} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="border border-ink px-3 py-1 disabled:opacity-30 hover:bg-ink hover:text-paper transition-colors"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

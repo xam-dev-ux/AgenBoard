@@ -15,6 +15,8 @@ export const api = {
     erc8128?: boolean
     tier?: string
     hasSkill?: boolean
+    limit?: number
+    offset?: number
   }) => {
     const qs = new URLSearchParams()
     if (params?.category) qs.set('category', params.category)
@@ -22,7 +24,11 @@ export const api = {
     if (params?.erc8128 !== undefined) qs.set('erc8128', String(params.erc8128))
     if (params?.tier) qs.set('tier', params.tier)
     if (params?.hasSkill !== undefined) qs.set('hasSkill', String(params.hasSkill))
-    return get<AgentEntry[]>(`/api/agents${qs.toString() ? '?' + qs : ''}`)
+    if (params?.limit !== undefined) qs.set('limit', String(params.limit))
+    if (params?.offset !== undefined) qs.set('offset', String(params.offset))
+    return get<{ agents: AgentEntry[]; total: number; limit: number; offset: number }>(
+      `/api/agents${qs.toString() ? '?' + qs : ''}`
+    )
   },
 
   getAgent: (basename: string) =>

@@ -3,13 +3,16 @@ import { AgentEntry, AgentCategory } from '@agentboard/shared'
 
 interface RegistryStore {
   agents: AgentEntry[]
+  total: number
+  page: number
   searchQuery: string
   selectedCategory: AgentCategory | null
   sortBy: 'trust' | 'x402volume' | 'age'
   filterPremium: boolean
   filterHasSkill: boolean
   selectedAgent: AgentEntry | null
-  setAgents: (agents: AgentEntry[]) => void
+  setAgents: (agents: AgentEntry[], total: number) => void
+  setPage: (page: number) => void
   setSearchQuery: (q: string) => void
   setSelectedCategory: (cat: AgentCategory | null) => void
   setSortBy: (sort: 'trust' | 'x402volume' | 'age') => void
@@ -21,6 +24,8 @@ interface RegistryStore {
 
 export const useRegistryStore = create<RegistryStore>((set, get) => ({
   agents: [],
+  total: 0,
+  page: 0,
   searchQuery: '',
   selectedCategory: null,
   sortBy: 'trust',
@@ -28,7 +33,8 @@ export const useRegistryStore = create<RegistryStore>((set, get) => ({
   filterHasSkill: false,
   selectedAgent: null,
 
-  setAgents: (agents) => set({ agents }),
+  setAgents: (agents, total) => set({ agents, total }),
+  setPage: (page) => set({ page }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
   setSortBy: (sortBy) => set({ sortBy }),

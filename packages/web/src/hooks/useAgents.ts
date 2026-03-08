@@ -3,16 +3,24 @@ import { api } from '../lib/api'
 import { useRegistryStore } from '../stores/registry'
 import { AgentCategory } from '@agentboard/shared'
 
+const PAGE_SIZE = 50
+
 export function useAgents() {
-  const setAgents = useRegistryStore(s => s.setAgents)
+  const { setAgents, page, selectedCategory, filterPremium, filterHasSkill } = useRegistryStore()
   return useQuery({
-    queryKey: ['agents'],
+    queryKey: ['agents', page, selectedCategory, filterPremium, filterHasSkill],
     queryFn: async () => {
-      const agents = await api.getAgents()
-      setAgents(agents)
-      return agents
+      const result = await api.getAgents({
+        category: selectedCategory ?? undefined,
+        tier: filterPremium ? 'premium' : undefined,
+        hasSkill: filterHasSkill ? true : undefined,
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+      })
+      setAgents(result.agents, result.total)
+      return result
     },
-    refetchInterval: 10 * 1000,
+    refetchInterval: 30 * 1000,
   })
 }
 
