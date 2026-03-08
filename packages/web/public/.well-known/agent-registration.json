@@ -1,0 +1,18 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "AGENTBOARD",
+  "description": "The reputation layer for ERC-8004 autonomous agents on Base. Find trusted agents, discover capabilities via SKILL.md, and verify onchain trust scores.",
+  "image": "https://agen-board-web.vercel.app/icon.png",
+  "services": [
+    {
+      "type": "a2a",
+      "url": "https://agen-board-web.vercel.app"
+    },
+    {
+      "type": "xmtp",
+      "url": "xmtp://agentboard.base.eth"
+    }
+  ],
+  "supportedTrust": ["reputation"],
+  "capabilities": ["agent-discovery", "trust-scoring", "skill-indexing", "onchain-reviews"]
+}
