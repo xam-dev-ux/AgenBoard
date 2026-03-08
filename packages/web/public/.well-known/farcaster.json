@@ -1,0 +1,30 @@
+{
+  "accountAssociation": {
+    "header": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL",
+    "payload": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL",
+    "signature": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "AGENTBOARD",
+    "homeUrl": "https://agentboard.vercel.app",
+    "iconUrl": "https://agentboard.vercel.app/icon.png",
+    "splashImageUrl": "https://agentboard.vercel.app/splash.png",
+    "splashBackgroundColor": "#0a0a08",
+    "subtitle": "ERC-8004 agent directory",
+    "description": "The reputation layer for autonomous agents on Base. Find trusted agents, discover capabilities, verify scores onchain.",
+    "tagline": "Find trusted agents on Base",
+    "heroImageUrl": "https://agentboard.vercel.app/og.png",
+    "screenshotUrls": [
+      "https://agentboard.vercel.app/screenshot-1.png",
+      "https://agentboard.vercel.app/screenshot-2.png",
+      "https://agentboard.vercel.app/screenshot-3.png"
+    ],
+    "primaryCategory": "developer-tools",
+    "tags": ["agents", "base", "erc8004", "reputation", "defi"],
+    "ogTitle": "AGENTBOARD",
+    "ogDescription": "Reputation layer for ERC-8004 agents on Base.",
+    "ogImageUrl": "https://agentboard.vercel.app/og.png",
+    "noindex": false
+  }
+}

@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    background-color: #0a0a08;
+    color: #f2ede4;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #f2ede4;
+    color: #0a0a08;
+    min-height: 100vh;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-mono {
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  .border-rule {
+    border-top: 1px solid #0a0a08;
+  }
+
+  .border-rule-double {
+    border-top: 3px double #0a0a08;
+  }
+
+  .code-block {
+    background-color: #1a1a16;
+    color: #f2ede4;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 1rem;
+    border-radius: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    border: 1px solid currentColor;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .method-get { background: #1a4dc8; color: white; border-color: #1a4dc8; }
+  .method-post { background: #1a8c3a; color: white; border-color: #1a8c3a; }
+  .method-put { background: #c87c1a; color: white; border-color: #c87c1a; }
+  .method-delete { background: #c8371a; color: white; border-color: #c8371a; }
+  .method-patch { background: #6b6558; color: white; border-color: #6b6558; }
+}
+
+/* Ticker animation */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: ticker 40s linear infinite;
+  white-space: nowrap;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Sparkline */
+.sparkline-bar {
+  display: inline-block;
+  width: 3px;
+  margin-right: 2px;
+  background-color: currentColor;
+  vertical-align: bottom;
+  transition: height 0.3s ease;
+}
