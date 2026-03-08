@@ -1,8 +1,8 @@
 {
   "accountAssociation": {
-    "header": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL",
-    "payload": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL",
-    "signature": "REPLACE_AFTER_SIGNING_AT_BASE_DEV_ACCOUNT_ASSOCIATION_TOOL"
+    "header": "eyJmaWQiOjU4MDczOCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDEwOUM5ZTgwMTNFY2U4ODZENGY4QUUyNjkyNTRkZTkzMEFFZmNkNDQifQ",
+    "payload": "eyJkb21haW4iOiJhZ2VuLWJvYXJkLXdlYi52ZXJjZWwuYXBwIn0",
+    "signature": "NijaHpELZSRDCL+QkUxl5oGBzziQPoC6cyblqzlrAhpFBOkfyxy0YrlKEg+imM96yqNVdI+L52HU8OYsfCTvdRs="
   },
   "miniapp": {
     "version": "1",
