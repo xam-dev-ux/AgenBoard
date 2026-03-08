@@ -258,10 +258,16 @@ export class Indexer {
   }
 
   private startPeriodicRefresh() {
-    // Refresh trust scores every 10 minutes
+    // Refresh trust scores every 10 minutes + re-check premium status
     setInterval(async () => {
       const agents = store.getAllAgents()
       for (const agent of agents) {
+        // Re-check premium status in case a payment was made
+        const isPremium = await this.checkPremium(agent.address)
+        if (isPremium !== (agent.tier === 'premium')) {
+          agent.tier = isPremium ? 'premium' : 'basic'
+          store.upsertAgent(agent)
+        }
         await this.refreshTrustScore(agent)
       }
 
