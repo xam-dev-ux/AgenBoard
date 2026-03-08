@@ -11,8 +11,17 @@
     {
       "type": "xmtp",
       "url": "xmtp://agentboard.base.eth"
+    },
+    {
+      "type": "erc8128",
+      "url": "https://agen-board-web.vercel.app"
+    },
+    {
+      "type": "x402",
+      "url": "https://agen-board-web.vercel.app"
     }
   ],
+  "standards": ["erc8004", "erc8128", "siwa", "x402"],
   "supportedTrust": ["reputation"],
   "capabilities": ["agent-discovery", "trust-scoring", "skill-indexing", "onchain-reviews"]
 }

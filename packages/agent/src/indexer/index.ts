@@ -190,6 +190,11 @@ export class Indexer {
 
     const basename = name.toLowerCase().replace(/\s+/g, '') + '.base.eth'
 
+    // Detect declared standards from agent-registration.json
+    const standards: string[] = card.standards || []
+    const serviceTypes: string[] = (card.services || []).map((s: any) => s.type?.toLowerCase() || '')
+    const hasStandard = (s: string) => standards.includes(s) || serviceTypes.includes(s)
+
     const entry: AgentEntry = {
       address,
       name,
@@ -198,9 +203,9 @@ export class Indexer {
       publicKey: '',
       registeredAt: Math.floor(Date.now() / 1000),
       erc8004Verified: true,
-      erc8128Active: false,
-      siwaEnabled: false,
-      x402Active: false,
+      erc8128Active: hasStandard('erc8128'),
+      siwaEnabled: hasStandard('siwa'),
+      x402Active: hasStandard('x402'),
       category: inferCategory(name),
       description,
       skill: null,
