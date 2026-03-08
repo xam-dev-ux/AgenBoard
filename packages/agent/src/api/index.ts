@@ -16,7 +16,13 @@ export function createApiServer() {
   const app = express()
 
   app.use(cors({
-    origin: config.corsOrigins,
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true) // curl / server-to-server
+      const allowed = config.corsOrigins.some(o => origin === o) ||
+        /^https:\/\/.*\.vercel\.app$/.test(origin) ||
+        origin === 'http://localhost:5173'
+      cb(null, allowed)
+    },
     methods: ['GET'],
   }))
 
