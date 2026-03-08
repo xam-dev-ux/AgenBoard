@@ -108,23 +108,30 @@ export class Indexer {
 
       console.log(`[Indexer] Syncing agents from block ${fromBlock} to ${latestBlock} (chunk=${chunkSize})`)
 
-      let totalFound = 0
+      // Phase 1: collect all events quickly (RPC only, no HTTP)
+      const allEvents: Array<{ agentId: bigint; owner: string; agentURI: string }> = []
       for (let start = fromBlock; start <= latestBlock; start += chunkSize) {
         const end = Math.min(start + chunkSize - 1, latestBlock)
         try {
           const events = await this.registry.queryFilter(filter, start, end)
-          totalFound += events.length
           for (const ev of events) {
             const args = (ev as any).args
-            if (!args) continue
-            await this.indexAgentFromURI(args.agentId, args.owner, args.agentURI)
+            if (args) allEvents.push({ agentId: args.agentId, owner: args.owner, agentURI: args.agentURI })
           }
         } catch (chunkErr: any) {
           console.warn(`[Indexer] Chunk ${start}-${end} failed: ${chunkErr.message}`)
         }
       }
+      console.log(`[Indexer] Found ${allEvents.length} events — fetching metadata...`)
 
-      console.log(`[Indexer] Sync complete — ${totalFound} agents found`)
+      // Phase 2: fetch metadata in parallel batches of 20
+      const BATCH = 20
+      for (let i = 0; i < allEvents.length; i += BATCH) {
+        const batch = allEvents.slice(i, i + BATCH)
+        await Promise.all(batch.map(e => this.indexAgentFromURI(e.agentId, e.owner, e.agentURI)))
+      }
+
+      console.log(`[Indexer] Sync complete — ${allEvents.length} agents indexed`)
     } catch (e) {
       console.error('[Indexer] Error syncing agents:', e)
     }
