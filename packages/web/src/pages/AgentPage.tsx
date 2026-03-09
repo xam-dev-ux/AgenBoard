@@ -27,7 +27,7 @@ export function AgentPage() {
   if (error || !agent) {
     return (
       <div className="py-12 text-center">
-        <p className="font-mono text-sm text-accent mb-4">Agent not found: {basename}</p>
+        <p className="font-mono text-sm text-accent mb-4">Agent not found: {address}</p>
         <Link to="/registry" className="font-mono text-xs text-accent2 underline">← Back to registry</Link>
       </div>
     )
