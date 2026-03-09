@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { WalletButton } from './WalletButton'
 import { TransactionModal } from './TransactionModal'
@@ -8,6 +9,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const { data: stats } = useStats()
   const { isInMiniApp, user } = useMiniApp()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const navLinks = [
     { to: '/registry', label: 'Directory' },
@@ -64,9 +66,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          {/* In Mini App context, wallet connect is handled by the host */}
-          {!isInMiniApp && <WalletButton />}
+          <div className="flex items-center gap-3">
+            {!isInMiniApp && <WalletButton />}
+            {/* Hamburger — mobile only */}
+            <button
+              className="md:hidden flex flex-col gap-1.5 p-1"
+              onClick={() => setMobileMenuOpen(o => !o)}
+              aria-label="Toggle menu"
+            >
+              <span className={`block w-5 h-0.5 bg-ink transition-transform ${mobileMenuOpen ? 'translate-y-2 rotate-45' : ''}`} />
+              <span className={`block w-5 h-0.5 bg-ink transition-opacity ${mobileMenuOpen ? 'opacity-0' : ''}`} />
+              <span className={`block w-5 h-0.5 bg-ink transition-transform ${mobileMenuOpen ? '-translate-y-2 -rotate-45' : ''}`} />
+            </button>
+          </div>
         </div>
+
+        {/* Mobile nav dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-ink bg-paper">
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 font-mono text-xs uppercase tracking-widest border-b border-paper2 hover:bg-paper2 transition-colors ${location.pathname.startsWith(to) ? 'text-accent' : 'text-muted'}`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Main */}

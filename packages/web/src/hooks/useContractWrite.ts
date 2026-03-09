@@ -1,9 +1,13 @@
 import { ethers } from 'ethers'
+import { Attribution } from 'ox/erc8021'
 import { useWalletStore } from '../stores/wallet'
 import { useTxStore } from '../stores/tx'
 
 const USDC_ADDRESS = import.meta.env.VITE_USDC_ADDRESS || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || ''
+
+// ERC-8021 builder code suffix — appended to all txs for Base attribution
+const BUILDER_SUFFIX = Attribution.toDataSuffix({ codes: ['bc_0fyeljum'] })
 
 const USDC_ABI = [
   'function approve(address spender, uint256 amount) returns (bool)',
@@ -17,13 +21,29 @@ const AGENTBOARD_ABI = [
   'function compareAgents(address agentA, address agentB) external',
 ]
 
+// Send a contract call with the ERC-8021 builder code suffix appended to calldata
+async function sendWithSuffix(
+  signer: ethers.Signer,
+  contract: ethers.Contract,
+  method: string,
+  args: unknown[]
+): Promise<ethers.TransactionResponse> {
+  const calldata = contract.interface.encodeFunctionData(method, args)
+  const dataWithSuffix = calldata + BUILDER_SUFFIX.slice(2) // strip 0x from suffix
+  return signer.sendTransaction({
+    to: await contract.getAddress(),
+    data: dataWithSuffix,
+  })
+}
+
 export function useContractWrite() {
   const { signer } = useWalletStore()
   const { setPending, setConfirming, setSuccess, setError } = useTxStore()
 
   async function approveAndCall(
     amountUsdc: number,
-    callFn: (contract: ethers.Contract) => Promise<ethers.ContractTransactionResponse>
+    method: string,
+    args: unknown[]
   ) {
     if (!signer) throw new Error('Wallet not connected')
 
@@ -42,7 +62,7 @@ export function useContractWrite() {
         await approveTx.wait()
       }
 
-      const tx = await callFn(agentboard)
+      const tx = await sendWithSuffix(signer, agentboard, method, args)
       setConfirming(tx.hash)
 
       const receipt = await tx.wait()
@@ -57,7 +77,7 @@ export function useContractWrite() {
 
   return {
     payPremium: (agentAddress: string, feeUsdc: number) =>
-      approveAndCall(feeUsdc, (c) => c.payPremiumTier(agentAddress)),
+      approveAndCall(feeUsdc, 'payPremiumTier', [agentAddress]),
 
     submitReview: (
       agentAddress: string,
@@ -66,14 +86,12 @@ export function useContractWrite() {
       proofTxHash: string,
       feeUsdc: number
     ) =>
-      approveAndCall(feeUsdc, (c) =>
-        c.submitReview(agentAddress, positive, commentHash, proofTxHash)
-      ),
+      approveAndCall(feeUsdc, 'submitReview', [agentAddress, positive, commentHash, proofTxHash]),
 
     queryAnalytics: (agentAddress: string, feeUsdc: number) =>
-      approveAndCall(feeUsdc, (c) => c.queryAgentAnalytics(agentAddress)),
+      approveAndCall(feeUsdc, 'queryAgentAnalytics', [agentAddress]),
 
     compareAgents: (agentA: string, agentB: string, feeUsdc: number) =>
-      approveAndCall(feeUsdc, (c) => c.compareAgents(agentA, agentB)),
+      approveAndCall(feeUsdc, 'compareAgents', [agentA, agentB]),
   }
 }
